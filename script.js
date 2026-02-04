@@ -1,50 +1,160 @@
-let score = 0;
-let timeLeft = 10;
-let timer;
+/*****************
+ * 기본 설정
+ *****************/
+const ADMIN_CODE = "DRIVER_OK_2026";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbx_Nb4GIyL6oblNTKtA73s8oxaNnJyFI5vFZZJZpb9VBhMGqq2cnlaZulkUF_zKwobm/exec"; // ← 중요
+const TARGET_MIN = 80000;
+const TARGET_MAX = 90000;
 
-const scoreEl = document.getElementById("score");
-const resultEl = document.getElementById("result");
-const tapBtn = document.getElementById("tapBtn");
-const startBtn = document.getElementById("startBtn");
-const refEl = document.getElementById("referrer");
+/*****************
+ * 상태 관리
+ *****************/
+let state = JSON.parse(localStorage.getItem("lottoState")) || {
+  phone: "",
+  recommend: "",
+  chance: 6,
+  point: 0
+};
 
-// 추천인 표시
-const params = new URLSearchParams(window.location.search);
-const ref = params.get("ref");
-if (ref) {
-  refEl.innerText = `📩 ${ref} 기사님의 초대`;
+function save() {
+  localStorage.setItem("lottoState", JSON.stringify(state));
 }
 
-tapBtn.addEventListener("click", () => {
-  score++;
-  scoreEl.innerText = score;
-});
+/*****************
+ * DOM
+ *****************/
+const phoneInput = document.getElementById("phone");
+const recInput = document.getElementById("recommend");
+const drawBtn = document.getElementById("drawBtn");
+const machine = document.getElementById("machine");
+const chanceEl = document.getElementById("chance");
+const pointEl = document.getElementById("point");
+const exchangeEl = document.getElementById("exchange");
 
-startBtn.addEventListener("click", () => {
-  score = 0;
-  timeLeft = 10;
-  scoreEl.innerText = 0;
-  resultEl.innerText = "";
-  tapBtn.disabled = false;
-  startBtn.disabled = true;
-
-  timer = setInterval(() => {
-    timeLeft--;
-    if (timeLeft <= 0) endGame();
-  }, 1000);
-});
-
-function endGame() {
-  clearInterval(timer);
-  tapBtn.disabled = true;
-  startBtn.disabled = false;
-
-  const point = score * 100;
-  resultEl.innerHTML = `
-    🎉 ${point} 포인트 획득!<br>
-    기사 등록 시 프로그램비 차감으로 사용 가능합니다.
-  `;
-
-  // 👉 여기서 ref + 점수 서버로 보내면 고도화 가능
-  console.log("추천인:", ref, "포인트:", point);
+/*****************
+ * 렌더링
+ *****************/
+function render() {
+  chanceEl.innerText = state.chance;
+  pointEl.innerText = state.point.toLocaleString();
+  exchangeEl.style.display = state.point >= 100000 ? "block" : "none";
+  drawBtn.disabled = !state.phone || state.chance <= 0;
 }
+
+/*****************
+ * 유틸
+ *****************/
+function validPhone(v) {
+  return /^010\d{8}$/.test(v);
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/*****************
+ * 구글 시트 전송
+ *****************/
+function sendToSheet() {
+  fetch(SHEET_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      phone: state.phone,
+      point: state.point,
+      chance: state.chance,
+      recommend: state.recommend
+    })
+  });
+}
+
+/*****************
+ * 입력 처리
+ *****************/
+window.savePhone = function () {
+  const v = phoneInput.value.replace(/[^0-9]/g, "");
+  if (!validPhone(v)) {
+    alert("휴대폰 번호를 정확히 입력해주세요.");
+    return;
+  }
+  state.phone = v;
+  save();
+  render();
+};
+
+window.saveRecommend = function () {
+  const v = recInput.value.replace(/[^0-9]/g, "");
+  if (!validPhone(v)) {
+    alert("추천 기사 휴대폰 번호를 정확히 입력해주세요.");
+    return;
+  }
+  state.recommend = v;
+  save();
+  alert("추천 기사 번호가 등록되었습니다.\n가입 확인 후 기회가 추가됩니다.");
+};
+
+/*****************
+ * 보상 계산
+ *****************/
+function getReward() {
+  if (state.chance === 1) {
+    let min = TARGET_MIN - state.point;
+    let max = TARGET_MAX - state.point;
+    min = Math.max(1000, min);
+    max = Math.max(min, max);
+    return Math.floor((Math.random() * (max - min) + min) / 1000) * 1000;
+  }
+  return pick([8000, 9000, 10000, 12000, 15000]);
+}
+
+/*****************
+ * 추첨
+ *****************/
+drawBtn.onclick = () => {
+  if (state.chance <= 0) return;
+
+  const gain = getReward();
+  state.chance -= 1;
+  state.point += gain;
+
+  const ball = document.createElement("div");
+  ball.className = "ball";
+  ball.innerText = gain / 10000 + "만";
+  machine.appendChild(ball);
+
+  save();
+  render();
+  sendToSheet(); // ⭐ 구글 시트 기록
+};
+
+/*****************
+ * 관리자 승인
+ *****************/
+window.adminAdd = function () {
+  const code = document.getElementById("adminCode").value;
+  if (code !== ADMIN_CODE) {
+    alert("잘못된 코드입니다.");
+    return;
+  }
+  if (!state.recommend) {
+    alert("추천 기사 번호가 없습니다.");
+    return;
+  }
+
+  state.chance += 1;
+  save();
+  render();
+  sendToSheet();
+
+  alert(
+    "추천 기사 가입 확인 완료!\n" +
+    "추천 기사 번호: " + state.recommend + "\n" +
+    "추첨 기회 1회 추가"
+  );
+};
+
+/*****************
+ * 초기화
+ *****************/
+if (state.phone) phoneInput.value = state.phone;
+if (state.recommend) recInput.value = state.recommend;
+render();
