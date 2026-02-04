@@ -184,16 +184,17 @@ function savePhone(){
   render();
 }
 
-recInput.onblur = () => {
+function saveRecommend(){
   const v = recInput.value.replace(/[^0-9]/g,"");
-  if(v && !validPhone(v)){
-    alert("추천 기사 번호 형식이 올바르지 않습니다.");
-    recInput.value = "";
+  if(!validPhone(v)){
+    alert("추천 기사 휴대폰 번호를 정확히 입력해주세요.");
     return;
   }
   state.recommend = v;
   save();
-};
+  alert("추천 기사 번호가 등록되었습니다.\n가입 확인 후 기회가 추가됩니다.");
+}
+
 
 function pick(arr){
   return arr[Math.floor(Math.random()*arr.length)];
