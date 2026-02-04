@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>관리자 - 기사 소개 현황</title>
+<style>
+body{background:#111;color:#fff;font-family:sans-serif;padding:20px}
+table{width:100%;border-collapse:collapse}
+td,th{border:1px solid #444;padding:8px;text-align:center}
+</style>
+</head>
+<body>
+
+<h2>📊 기사 소개 로그</h2>
+<table>
+<tr><th>전화번호</th><th>기기ID</th><th>시간</th></tr>
+<tbody id="list"></tbody>
+</table>
+
+<script>
+let data = JSON.parse(localStorage.getItem("admin_log")||"[]");
+let html = "";
+data.forEach(d=>{
+ html += `<tr><td>${d.phone}</td><td>${d.device}</td><td>${d.time}</td></tr>`;
+});
+document.getElementById("list").innerHTML = html;
+</script>
+
+</body>
+</html>
