@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>대리운전 기사님 전용 충전금 로또</title>
+<title>포인트 로또</title>
 <style>
 body {
   margin:0;
@@ -81,6 +81,7 @@ input {
 }
 
 .highlight { color:#ffcc00; font-weight:bold; }
+.small { font-size:12px; color:#bbb; margin-top:6px; }
 </style>
 </head>
 <body>
@@ -89,10 +90,20 @@ input {
   <h1>🎱 포인트 로또</h1>
   <div class="sub">포인트 적립 이벤트</div>
 
+  <!-- 본인 번호 -->
   <div class="box">
-    📱 휴대폰 번호 입력
+    📱 본인 휴대폰 번호
     <input id="phone" placeholder="01012345678">
     <button style="margin-top:8px" onclick="savePhone()">확인</button>
+  </div>
+
+  <!-- 추천 기사 -->
+  <div class="box">
+    🚕 추천 기사 휴대폰 번호
+    <input id="recommend" placeholder="01087654321">
+    <div class="small">
+      👉 기사 추천 후 <b>실제 가입 확인 시</b> 추첨 기회 1회 추가
+    </div>
   </div>
 
   <div class="machine" id="machine"></div>
@@ -107,15 +118,19 @@ input {
     </div>
   </div>
 
+  <!-- 관리자 -->
   <div class="box">
     🔑 관리자 코드
     <input id="adminCode" placeholder="관리자 코드 입력">
     <button style="margin-top:8px" onclick="adminAdd()">기회 추가</button>
   </div>
 
+  <!-- 전화 -->
   <div class="box">
-    📞 기사 가입 문의<br>
-    <span class="highlight">02-470-0071</span>
+    📞 기사 가입 문의(터치 시 연결)<br>
+    <a href="tel:024700071" class="highlight" style="text-decoration:none;">
+      02-470-0071
+    </a>
   </div>
 </div>
 
@@ -126,11 +141,13 @@ const TARGET_MAX = 90000;
 
 let state = JSON.parse(localStorage.getItem("lottoState")) || {
   phone: "",
+  recommend: "",
   chance: 6,
   point: 0
 };
 
 const phoneInput = document.getElementById("phone");
+const recInput = document.getElementById("recommend");
 const drawBtn = document.getElementById("drawBtn");
 const machine = document.getElementById("machine");
 const chanceEl = document.getElementById("chance");
@@ -148,9 +165,13 @@ function render(){
   drawBtn.disabled = !state.phone || state.chance <= 0;
 }
 
+function validPhone(v){
+  return /^010\d{8}$/.test(v);
+}
+
 function savePhone(){
   const v = phoneInput.value.replace(/[^0-9]/g,"");
-  if(!/^010\d{8}$/.test(v)){
+  if(!validPhone(v)){
     alert("휴대폰 번호를 정확히 입력해주세요.");
     return;
   }
@@ -158,6 +179,17 @@ function savePhone(){
   save();
   render();
 }
+
+recInput.onblur = () => {
+  const v = recInput.value.replace(/[^0-9]/g,"");
+  if(v && !validPhone(v)){
+    alert("추천 기사 번호 형식이 올바르지 않습니다.");
+    recInput.value = "";
+    return;
+  }
+  state.recommend = v;
+  save();
+};
 
 function pick(arr){
   return arr[Math.floor(Math.random()*arr.length)];
@@ -177,7 +209,7 @@ function getReward(){
 drawBtn.onclick = () => {
   if(state.chance <= 0) return;
 
-  const gain = getReward(); // ★ 단일 기준
+  const gain = getReward();
   state.chance -= 1;
   state.point += gain;
 
@@ -192,19 +224,26 @@ drawBtn.onclick = () => {
 
 function adminAdd(){
   const code = document.getElementById("adminCode").value;
-  if(code === ADMIN_CODE){
-    state.chance += 1;
-    save();
-    render();
-    alert("기사 등록 확인! 기회가 추가되었습니다.");
-  } else {
+  if(code !== ADMIN_CODE){
     alert("잘못된 코드입니다.");
+    return;
   }
+  if(!state.recommend){
+    alert("추천 기사 번호가 없습니다.");
+    return;
+  }
+  state.chance += 1;
+  save();
+  render();
+  alert(
+    "추천 기사 가입 확인 완료!\n" +
+    "추천 기사 번호: " + state.recommend + "\n" +
+    "추첨 기회 1회가 추가되었습니다."
+  );
 }
 
-if(state.phone){
-  phoneInput.value = state.phone;
-}
+if(state.phone) phoneInput.value = state.phone;
+if(state.recommend) recInput.value = state.recommend;
 render();
 </script>
 </body>
