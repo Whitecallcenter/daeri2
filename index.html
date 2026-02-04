@@ -2,187 +2,197 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>추천 포인트 이벤트</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>포인트 로또</title>
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #0f172a;
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-.container {
-  width: 100%;
-  max-width: 420px;
-  padding: 20px;
-  text-align: center;
-}
-h1 { font-size: 22px; margin-bottom: 10px; }
-.points { font-size: 20px; margin: 10px 0; }
-.notice { font-size: 13px; color: #cbd5f5; margin-bottom: 10px; }
-.phone {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
-  margin-bottom: 10px;
-}
-button {
-  width: 100%;
-  padding: 14px;
-  background: #22c55e;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: bold;
-}
-button:disabled {
-  background: #475569;
-}
-.machine {
-  margin: 20px auto;
-  width: 200px;
-  height: 120px;
-  background: #1e293b;
-  border-radius: 12px;
-  position: relative;
-  overflow: hidden;
-}
-.ball {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #facc15;
-  color: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: bold;
-  position: absolute;
-  left: 80px;
-  top: -50px;
-  animation: drop 1s ease-out forwards;
-}
-@keyframes drop {
-  to { top: 40px; }
-}
-.results {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 10px;
-}
-.result-ball {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #38bdf8;
-  color: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 12px;
-  font-weight: bold;
-}
-.footer {
-  margin-top: 15px;
-  font-size: 13px;
-  color: #e5e7eb;
-}
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #111;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 420px;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  h1 { margin-bottom: 5px; }
+  .sub { font-size: 14px; color: #bbb; }
+
+  .machine {
+    margin: 20px auto;
+    min-height: 120px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .ball {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff, #ffcc00);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-weight: bold;
+    animation: pop 0.6s ease;
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  button {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    background: #ffcc00;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button:disabled {
+    background: #555;
+    color: #999;
+  }
+
+  .box {
+    margin-top: 15px;
+    padding: 12px;
+    background: #222;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+  }
+
+  .highlight {
+    color: #ffcc00;
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
-
-<div class="container">
-  <h1>🎁 추천 포인트 이벤트</h1>
-  <div class="points">현재 포인트: <b id="points">0</b>점</div>
-  <div class="notice">10만점 이상 시 충전금 교환 가능</div>
-  <div class="notice">남은 추첨 기회: <span id="chances">6</span>회</div>
-
-  <input class="phone" id="phone" placeholder="기사 휴대폰 번호 입력 (010xxxxxxxx)" />
-  <button id="drawBtn">🎱 추첨하기</button>
+<div class="wrap">
+  <h1>🎱 포인트 로또</h1>
+  <div class="sub">6회 종료 시 8~9만 포인트 지급</div>
 
   <div class="machine" id="machine"></div>
-  <div class="results" id="results"></div>
 
-  <div class="footer">
-    📞 기사 가입 문의: <b>02-470-0071</b><br/>
-    ※ 실제 기사 등록 완료 시 기회 지급
+  <button id="drawBtn">공 굴리기</button>
+
+  <div class="box">
+    남은 기회: <span id="chance"></span><br/>
+    누적 포인트: <span id="point"></span>P
+    <div id="exchange" class="highlight" style="display:none;">
+      ▶ 10만점 이상 시 충전금 교환 가능
+    </div>
+  </div>
+
+  <div class="box">
+    🔑 관리자 코드 입력
+    <input id="adminCode" placeholder="관리자 코드 입력"/>
+    <button style="margin-top:8px;" onclick="adminAdd()">기회 추가</button>
+  </div>
+
+  <div class="box">
+    📞 기사 가입 문의<br/>
+    <span class="highlight">02-470-0071</span>
   </div>
 </div>
 
 <script>
-let state = JSON.parse(localStorage.getItem("eventState")) || {
-  points: 0,
-  chances: 6,
+const TARGET_MIN = 80000;
+const TARGET_MAX = 90000;
+const ADMIN_CODE = "DRIVER_OK_2026";
+
+let state = JSON.parse(localStorage.getItem("lottoState")) || {
+  chance: 6,
+  point: 0,
   draws: []
 };
 
-const pointsEl = document.getElementById("points");
-const chancesEl = document.getElementById("chances");
 const machine = document.getElementById("machine");
-const results = document.getElementById("results");
-const btn = document.getElementById("drawBtn");
+const drawBtn = document.getElementById("drawBtn");
+const chanceEl = document.getElementById("chance");
+const pointEl = document.getElementById("point");
+const exchangeEl = document.getElementById("exchange");
 
 function save() {
-  localStorage.setItem("eventState", JSON.stringify(state));
+  localStorage.setItem("lottoState", JSON.stringify(state));
 }
 
 function render() {
-  pointsEl.innerText = state.points;
-  chancesEl.innerText = state.chances;
-  results.innerHTML = "";
-  state.draws.forEach(p => {
-    const b = document.createElement("div");
-    b.className = "result-ball";
-    b.innerText = p/1000 + "만";
-    results.appendChild(b);
-  });
-  btn.disabled = state.chances <= 0;
+  chanceEl.innerText = state.chance;
+  pointEl.innerText = state.point.toLocaleString();
+  exchangeEl.style.display = state.point >= 100000 ? "block" : "none";
+  drawBtn.disabled = state.chance <= 0;
 }
-render();
 
-btn.onclick = () => {
-  const phone = document.getElementById("phone").value;
-  if (!/^010\d{8}$/.test(phone)) {
-    alert("휴대폰 번호 형식이 올바르지 않습니다.");
-    return;
+function pick(arr){
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getReward(){
+  if(state.chance === 1){
+    let needMin = TARGET_MIN - state.point;
+    let needMax = TARGET_MAX - state.point;
+    needMin = Math.max(1000, needMin);
+    needMax = Math.max(needMin, needMax);
+    return Math.floor(
+      (Math.random() * (needMax - needMin) + needMin) / 1000
+    ) * 1000;
   }
-  if (state.chances <= 0) return;
+  return pick([8000,9000,10000,12000,15000]);
+}
 
-  btn.disabled = true;
-  machine.innerHTML = "";
+drawBtn.onclick = () => {
+  if(state.chance <= 0) return;
 
-  const remaining = 6 - state.draws.length;
-  const maxRemain = 90000 - state.points;
-  const minGain = Math.max(3000, maxRemain / remaining * 0.8);
-  const maxGain = Math.max(5000, maxRemain / remaining * 1.2);
-  const gain = Math.min(
-    Math.floor((Math.random() * (maxGain - minGain) + minGain) / 1000) * 1000,
-    maxRemain
-  );
+  const gain = getReward();
+  state.chance -= 1;
+  state.point += gain;
+  state.draws.push(gain);
 
   const ball = document.createElement("div");
   ball.className = "ball";
-  ball.innerText = gain / 1000 + "만";
+  ball.innerText = (gain/1000) + "만";
   machine.appendChild(ball);
 
-  setTimeout(() => {
-    state.points += gain;
-    state.chances -= 1;
-    state.draws.push(gain);
+  save();
+  render();
+};
+
+function adminAdd(){
+  const input = document.getElementById("adminCode");
+  if(input.value === ADMIN_CODE){
+    state.chance += 1;
     save();
     render();
-    btn.disabled = false;
-  }, 1200);
-};
-</script>
+    alert("기사 등록 확인! 추첨 기회가 1회 추가되었습니다.");
+    input.value = "";
+  } else {
+    alert("잘못된 코드입니다.");
+  }
+}
 
+render();
+</script>
 </body>
 </html>
