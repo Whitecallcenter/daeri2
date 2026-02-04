@@ -6,38 +6,26 @@
 <title>대리운전 포인트 로또</title>
 
 <style>
-html,body{
-  margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif
-}
-.container{
-  height:100vh;display:flex;flex-direction:column;
-  justify-content:space-between;padding:20px
-}
+html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif}
+.container{height:100vh;display:flex;flex-direction:column;justify-content:space-between;padding:20px}
 h2{text-align:center}
 .info{text-align:center;font-size:20px}
 
 .machine{
   position:relative;
-  width:200px;height:200px;
+  width:220px;height:220px;
   margin:0 auto;
   border-radius:50%;
   background:#222;
   overflow:hidden;
 }
 .balls{
-  position:absolute;
-  bottom:0;
-  width:100%;height:100%;
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  align-items:center;
-  animation: shake 0.3s infinite;
+  position:absolute;inset:0;
+  display:flex;flex-wrap:wrap;
+  justify-content:center;align-items:center;
+  animation:shake .3s infinite;
 }
-.ball{
-  width:30px;height:30px;border-radius:50%;
-  background:#ffcc00;margin:5px;
-}
+.ball{width:26px;height:26px;border-radius:50%;background:#ffcc00;margin:6px}
 @keyframes shake{
   0%{transform:translate(0,0)}
   25%{transform:translate(2px,2px)}
@@ -45,19 +33,21 @@ h2{text-align:center}
   75%{transform:translate(2px,-2px)}
   100%{transform:translate(0,0)}
 }
-
-.pick{
-  animation: pop 1s forwards;
+.exit{
+  position:absolute;
+  top:130px;left:50%;
+  transform:translateX(-50%);
+  width:60px;height:60px;
+  border-radius:50%;
+  background:#ffcc00;
+  color:#000;font-weight:bold;
+  display:none;align-items:center;justify-content:center;
 }
+.exit.show{display:flex;animation:pop 1s forwards}
 @keyframes pop{
-  0%{transform:translateY(0)}
-  100%{transform:translateY(-120px) scale(1.5)}
-}
-
-.result{
-  text-align:center;
-  font-size:24px;
-  margin-top:10px;
+  0%{top:130px;opacity:0}
+  50%{opacity:1}
+  100%{top:-40px}
 }
 
 button{
@@ -69,7 +59,9 @@ input{
   border-radius:10px;border:none;margin-top:10px
 }
 .log{text-align:center;color:#ccc;min-height:40px}
-.small{text-align:center;font-size:12px;color:#777}
+.small{text-align:center;font-size:13px;color:#aaa}
+.phone{text-align:center;margin-top:10px}
+.phone a{color:#ffcc00;text-decoration:none}
 </style>
 </head>
 
@@ -90,8 +82,8 @@ input{
         <div class="ball"></div><div class="ball"></div><div class="ball"></div>
         <div class="ball"></div><div class="ball"></div><div class="ball"></div>
       </div>
+      <div class="exit" id="exitBall"></div>
     </div>
-    <div class="result" id="result">?</div>
 
     <button onclick="draw()">공 뽑기 🎯</button>
     <div class="log" id="log"></div>
@@ -99,78 +91,115 @@ input{
     <hr style="border:1px solid #333;margin:20px 0">
 
     <h3>🚖 기사 소개</h3>
-    <input id="phone" placeholder="기사 전화번호 (-없이)">
-    <button onclick="invite()">기사 소개 → 기회 +1</button>
+    <input id="phone" placeholder="010-0000-0000" maxlength="13">
+    <button onclick="requestInvite()">기사 소개 요청</button>
   </div>
 
-  <div class="small">
-    10만P 이상부터 충전금 전환 가능<br>
-    새로고침해도 기회는 복구되지 않습니다
+  <div>
+    <div class="phone">
+      📞 기사 가입 문의 <a href="tel:024700071">02-470-0071</a>
+    </div>
+    <div class="small">
+      ※ 기사 등록 확인 후 기회 지급<br>
+      10만P 이상부터 충전금 전환 가능
+    </div>
   </div>
 
 </div>
 
 <script>
-// 🔒 최초 1회만 초기 지급
-if(localStorage.getItem("initialized")!=="yes"){
-  localStorage.setItem("chance",6);
+// ---------- 초기 1회만 지급 ----------
+if(localStorage.getItem("init")!=="yes"){
   localStorage.setItem("point",0);
-  localStorage.setItem("invited","[]");
-  localStorage.setItem("initialized","yes");
+  localStorage.setItem("chance",6);
+  localStorage.setItem("pending","[]");
+  localStorage.setItem("approved","[]");
+  localStorage.setItem("init","yes");
 }
 
 let point = Number(localStorage.getItem("point"));
 let chance = Number(localStorage.getItem("chance"));
-let invited = JSON.parse(localStorage.getItem("invited"));
+let pending = JSON.parse(localStorage.getItem("pending"));
+let approved = JSON.parse(localStorage.getItem("approved"));
 
 update();
 
-function draw(){
-  if(chance<=0) return log("❌ 기회 없음. 기사 소개 필요");
+// ---------- 핵심 보정 로직 ----------
+const TARGET_MIN = 80000;
+const TARGET_MAX = 90000;
 
-  const balls = document.getElementById("balls");
+function getReward(){
+  // 기본 구간 (기사 승인 3명 미만)
+  if(approved.length < 3){
+    // 마지막 기본 기회 → 강제 보정
+    if(chance === 1){
+      let min = Math.max(1000, TARGET_MIN - point);
+      let max = Math.max(min, TARGET_MAX - point);
+      return Math.floor(
+        (Math.random()*(max-min)+min)/1000
+      )*1000;
+    }
+    return pick([8000,9000,10000,12000,15000]);
+  }
+  // 기사 3명 이상 → 고액 풀
+  return pick([10000,20000,30000]);
+}
+
+// ---------- 공 뽑기 ----------
+function draw(){
+  if(chance<=0) return log("❌ 기회 없음");
+
+  const balls=document.getElementById("balls");
+  const exit=document.getElementById("exitBall");
   balls.style.animationPlayState="running";
-  document.getElementById("result").innerText="";
+  exit.classList.remove("show");
 
   setTimeout(()=>{
     balls.style.animationPlayState="paused";
 
-    let reward;
-    if(invited.length < 3){
-      reward = pick([1000,3000,5000,7000,10000]);
-    }else{
-      reward = pick([10000,20000,30000]);
-    }
-
+    let reward = getReward();
     point += reward;
     chance--;
 
-    document.getElementById("result").innerText =
-      reward.toLocaleString()+"P";
+    exit.innerText = reward.toLocaleString()+"P";
+    exit.classList.add("show");
 
     save(); update();
     log("🎉 당첨!");
   },2000);
 }
 
-function invite(){
+// ---------- 기사 소개 요청 ----------
+function requestInvite(){
   let phone=document.getElementById("phone").value.trim();
-  if(phone.length<10) return log("전화번호 확인");
-  if(invited.includes(phone)) return log("이미 등록된 기사");
+  let reg=/^010-\d{4}-\d{4}$/;
+  if(!reg.test(phone)) return log("휴대폰 번호 형식 확인");
+  if(pending.includes(phone)) return log("이미 요청됨");
 
-  invited.push(phone);
-  chance++;
-  save(); update();
-  log("✅ 기사 소개 완료! 기회 +1");
+  pending.push(phone);
+  save();
+  log("📌 기사 등록 확인 중입니다");
 }
 
-function pick(arr){
-  return arr[Math.floor(Math.random()*arr.length)];
-}
+// ---------- (관리자용 수동 승인 방식) ----------
+// 실제 운영 시 여기 approved 배열에
+// 가입 완료된 번호를 수동으로 추가
+// 예: approved.push("010-1234-5678");
+
+pending.forEach(p=>{
+  if(approved.includes(p)){
+    chance++;
+    pending = pending.filter(x=>x!==p);
+  }
+});
+
+// ---------- 공통 ----------
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
 function save(){
   localStorage.setItem("point",point);
   localStorage.setItem("chance",chance);
-  localStorage.setItem("invited",JSON.stringify(invited));
+  localStorage.setItem("pending",JSON.stringify(pending));
+  localStorage.setItem("approved",JSON.stringify(approved));
 }
 function update(){
   document.getElementById("point").innerText=point.toLocaleString();
