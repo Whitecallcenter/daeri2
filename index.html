@@ -82,6 +82,15 @@ input {
 
 .highlight { color:#ffcc00; font-weight:bold; }
 .small { font-size:12px; color:#bbb; margin-top:6px; }
+
+/* 🔽 하단 배너 스타일 */
+.bottom-banner {
+  margin-top: 24px;
+}
+.bottom-banner img {
+  width: 100%;
+  border-radius: 12px;
+}
 </style>
 </head>
 <body>
@@ -90,25 +99,20 @@ input {
   <h1>🎱 포인트 로또</h1>
   <div class="sub">포인트 적립 이벤트</div>
 
-  <!-- 본인 번호 -->
   <div class="box">
     📱 본인 휴대폰 번호
     <input id="phone" placeholder="01012345678">
     <button style="margin-top:8px" onclick="savePhone()">확인</button>
   </div>
 
-  <!-- 추천 기사 -->
- <div class="box">
-  🚕 추천 기사 휴대폰 번호
-  <input id="recommend" placeholder="01087654321">
-  <button style="margin-top:8px" onclick="saveRecommend()">
-    추천 기사 번호 확인
-  </button>
-  <div class="small">
-    👉 기사 추천 후 <b>실제 가입 확인 시</b> 추첨 기회 1회 추가
+  <div class="box">
+    🚕 추천 기사 휴대폰 번호
+    <input id="recommend" placeholder="01087654321">
+    <button style="margin-top:8px" onclick="saveRecommend()">추천 기사 번호 확인</button>
+    <div class="small">
+      👉 기사 추천 후 <b>실제 가입 확인 시</b> 추첨 기회 1회 추가
+    </div>
   </div>
-</div>
-
 
   <div class="machine" id="machine"></div>
 
@@ -122,20 +126,24 @@ input {
     </div>
   </div>
 
-  <!-- 관리자 -->
   <div class="box">
     🔑 관리자 코드
     <input id="adminCode" placeholder="관리자 코드 입력">
     <button style="margin-top:8px" onclick="adminAdd()">기회 추가</button>
   </div>
 
-  <!-- 전화 -->
   <div class="box">
     📞 기사 가입 문의(터치 시 연결)<br>
     <a href="tel:024700071" class="highlight" style="text-decoration:none;">
       02-470-0071
     </a>
   </div>
+
+  <!-- 🔽 하단 이미지 배너 -->
+  <div class="bottom-banner">
+    <img src="https://i.ibb.co/h1BDxV6/your-image.jpg" alt="기사 모집 배너">
+  </div>
+
 </div>
 
 <script>
@@ -195,7 +203,6 @@ function saveRecommend(){
   alert("추천 기사 번호가 등록되었습니다.\n가입 확인 후 기회가 추가됩니다.");
 }
 
-
 function pick(arr){
   return arr[Math.floor(Math.random()*arr.length)];
 }
@@ -213,14 +220,13 @@ function getReward(){
 
 drawBtn.onclick = () => {
   if(state.chance <= 0) return;
-
   const gain = getReward();
-  state.chance -= 1;
+  state.chance--;
   state.point += gain;
 
   const ball = document.createElement("div");
   ball.className = "ball";
-  ball.innerText = (gain/10000)+"만";
+  ball.innerText = gain/10000 + "만";
   machine.appendChild(ball);
 
   save();
@@ -237,14 +243,10 @@ function adminAdd(){
     alert("추천 기사 번호가 없습니다.");
     return;
   }
-  state.chance += 1;
+  state.chance++;
   save();
   render();
-  alert(
-    "추천 기사 가입 확인 완료!\n" +
-    "추천 기사 번호: " + state.recommend + "\n" +
-    "추첨 기회 1회가 추가되었습니다."
-  );
+  alert("추천 기사 가입 확인 완료!\n추첨 기회 1회 추가");
 }
 
 if(state.phone) phoneInput.value = state.phone;
